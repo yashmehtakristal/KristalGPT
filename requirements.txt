@@ -12,3 +12,4 @@ python-dotenv==1.0.0
 streamlit==1.27.2
 streamlit-authenticator==0.2.3
 tenacity==8.2.3
+libtk8.6
