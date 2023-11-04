@@ -5,8 +5,8 @@ from streamlit_extras.app_logo import add_logo
 from st_pages import Page, Section, add_page_title, show_pages, hide_pages
 
 # Setting page config & header
-st.set_page_config(page_title = "KristalGPT", page_icon = "📖", layout = "wide", initial_sidebar_state = "expanded")
-st.header("📖 Kristal GPT")
+st.set_page_config(page_title = "Kristal Retriever", page_icon = "📖", layout = "wide", initial_sidebar_state = "expanded")
+st.header("📖 Kristal Retriever")
 
 # Hide particular pages if not logged in
 if not st.session_state.logged_in:
@@ -24,8 +24,6 @@ import openai
 import os
 import tempfile
 from tempfile import NamedTemporaryFile
-import tkinter as tk
-from tkinter import filedialog
 from database_helper_functions import sign_up, fetch_users
 import streamlit_authenticator as stauth
 
@@ -78,7 +76,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
     # Display Markdown of the main page
     st.markdown(
     '''
-    This is the Home Page of the Kristal GPT. 
+    This section will give more information about Kristal GPT. 
 
     This application has 2 main features (Bulk Upload and Q&A). Moreover, it has two high-level categorization (Basic, Advanced) 
 
@@ -130,4 +128,4 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
     )
 
 else:
-    st.info("Seems like you are not logged in. Please head over to the Sign Up/Login to login", icon="ℹ️")
+    st.info("Seems like you are not logged in. Please head over to the Login page to login", icon="ℹ️")

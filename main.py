@@ -3,15 +3,13 @@
 import streamlit as st
 
 # Setting page config & header
-st.set_page_config(page_title="KristalGPT", page_icon="📖", layout="wide", initial_sidebar_state="expanded")
-st.header("📖 Kristal GPT")
+st.set_page_config(page_title="Kristal Retriever", page_icon="📖", layout="wide", initial_sidebar_state="expanded")
+st.header("📖 Kristal Retriever")
 
 import openai
 import os
 import tempfile
 from tempfile import NamedTemporaryFile
-import tkinter as tk
-from tkinter import filedialog
 from streamlit_extras.app_logo import add_logo
 from st_pages import Page, Section, add_page_title, show_pages, hide_pages
 from database_helper_functions import sign_up, fetch_users
@@ -42,8 +40,8 @@ add_logo("https://assets-global.website-files.com/614a9edd8139f5def3897a73/61960
 
 show_pages(
     [
-        Page("main.py","Sign Up/Login", "🗝️"),
-        Page("pages/home.py", "Home", "🏠"),
+        Page("main.py","Login", "🗝️"),
+        Page("pages/home.py", "About", "😀"),
         # Section(name = "Bulk Upload", icon="📚"),
         Page("pages/bulk_upload_basic.py", "Bulk Upload - Basic", "📚"),
         Page("pages/bulk_upload_advanced.py", "Bulk Upload - Advanced", "📚"),
@@ -66,11 +64,11 @@ if "logged_in" not in st.session_state:
 
 # Hide particular pages if not logged in
 if not st.session_state.logged_in:
-    hide_pages(["Home", "Bulk Upload - Basic", "Bulk Upload - Advanced", "Q&A - Basic", "Q&A - Advanced"])
+    hide_pages(["About", "Bulk Upload - Basic", "Bulk Upload - Advanced", "Q&A - Basic", "Q&A - Advanced"])
 
 # Hide particular pages if logged out
 if st.session_state.logged_out:
-    hide_pages(["Home", "Bulk Upload - Basic", "Bulk Upload - Advanced", "Q&A - Basic", "Q&A - Advanced"])
+    hide_pages(["About", "Bulk Upload - Basic", "Bulk Upload - Advanced", "Q&A - Basic", "Q&A - Advanced"])
 
 
 # Session state variable to save "username"
@@ -113,7 +111,8 @@ try:
     # Along, with the name of the cookie (to reauthenticate user without them re-entering credentials, so they can refresh page without providing their password again)
     # Write random key to hash a cookies signature (abcdef)
     # Specify number of days cookie can be used for (30 days)
-    Authenticator = stauth.Authenticate(credentials, cookie_name = 'Streamlit', key = 'abcdef', cookie_expiry_days = 30)
+    Authenticator = stauth.Authenticate(credentials, cookie_name = 'Streamlit', key = 'abcdef', cookie_expiry_days = 0)
+    # Authenticator = stauth.Authenticate(credentials, cookie_name = 'Streamlit', key = 'abcdef', cookie_expiry_days = 30)
 
     # Save Authenticator to session state
     st.session_state.Authenticator = Authenticator
@@ -124,8 +123,8 @@ try:
     info, info1 = st.columns(2)
 
     # If the provided email, username and password does not match authentication, display the signup module
-    if not authentication_status:
-        sign_up()
+    # if not authentication_status:
+    #     sign_up()
 
     # st.write(usernames)
 
@@ -159,7 +158,7 @@ try:
                 # Show the rest of the pages 
                 # show_pages(
                 #     [
-                #         Page("pages/home.py", "Home", "🏠"),
+                #         Page("pages/home.py", "About", "🏠"),
                 #         # Section(name = "Bulk Upload", icon="📚"),
                 #         Page("pages/bulk_upload_basic.py", "Bulk Upload - Basic", "📚"),
                 #         Page("pages/bulk_upload_advanced.py", "Bulk Upload - Advanced", "📚"),

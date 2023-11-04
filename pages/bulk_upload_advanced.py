@@ -5,8 +5,8 @@ from streamlit_extras.app_logo import add_logo
 from st_pages import Page, Section, add_page_title, show_pages, hide_pages
 
 # Setting page config & header
-st.set_page_config(page_title = "KristalGPT", page_icon = "📖", layout = "wide")
-st.header("📖 Kristal GPT")
+st.set_page_config(page_title = "Kristal Retriever", page_icon = "📖", layout = "wide")
+st.header("📖 Kristal Retriever")
 
 # Hide particular pages if not logged in
 if not st.session_state.logged_in:
@@ -20,8 +20,6 @@ import openai
 import os
 import tempfile
 from tempfile import NamedTemporaryFile
-import tkinter as tk
-from tkinter import filedialog
 from streamlit_extras.app_logo import add_logo
 from llama_index.readers.schema.base import Document
 # from core.config import max_retries
@@ -34,8 +32,9 @@ from ui import (
 )
 
 from bundle import no_embeddings_process_documents_loop_advanced, embeddings_process_documents_loop_advanced
-from core.output import output_to_excel, download_data_as_excel, download_data_as_csv
+from core.output import output_to_excel, download_data_as_excel_link, download_data_as_csv_link
 from core.loading import display_document_from_uploaded_files
+from core.chroma import create_or_get_chroma_db, download_embedding_old, print_files_in_particular_directory, print_files_in_directory, download_embedding_zip, st_server_file, check_zipfile_directory, upload_zip_files
 # from core.loading import read_documents_from_directory, iterate_files_from_directory, save_uploaded_file, read_documents_from_uploaded_files, get_tables_from_uploaded_file, iterate_files_from_uploaded_files, iterate_excel_files_from_directory, iterate_uploaded_excel_files, print_file_details, show_dataframes, iterate_uploaded_excel_file
 # from core.pickle import save_to_pickle, load_from_pickle
 # from core.indexing import query_engine_function, build_vector_index
@@ -112,34 +111,18 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
     # Check embeddings
     check_embeddings = st.radio(label = "Do you have saved embeddings?", options = ["Yes", "No"], index = None, help = "Embeddings are saved files created by ChromaDB", disabled=False, horizontal = False, label_visibility="visible")
 
-    def callback():
-        # Button was clicked
-        st.session_state.process_documents = True
+    # def callback():
+    #     # Button was clicked
+    #     st.session_state.process_documents = True
 
     # User does not have embeddings they can use
     if check_embeddings == "No":
 
-        #with st.form(key = "check_embeddings_no_form"):
+        # Obtain chrome_file_path and chroma_file_name
+        master_folder, chroma_file_path, chroma_file_name = st_server_file()
 
-        # OPTION 1: Using Tkinter to load corresponding file path from where we can use embeddings
-
-        # Set up tkinter
-        root = tk.Tk()
-        root.withdraw()
-
-        # Make folder picker dialog appear on top of other windows
-        # root.wm_attributes('-topmost', 1)
-
-        # Folder picker button
-        # st.title('Folder Picker')
-        st.write('Please select a folder which will be used to save embeddings:')
-        clicked = st.button('Folder Picker',type = "secondary")
-
-        # User clicked on Folder Picker button
-        if clicked:
-            chroma_file_path = st.text_input('Selected folder:', filedialog.askdirectory(master=root))
-            st.session_state['chroma_file_path'] = chroma_file_path
-
+        # print_files_in_particular_directory(master_folder)
+        # print_files_in_particular_directory(chroma_file_path)
 
         # File uploader section for pdfs
         uploaded_files = st.file_uploader(
@@ -166,7 +149,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
             max_chars = None,
             type = "default",
             help = "This will be used to replace the word, fund, in certain prompts",
-            placeholder = "Please input the fund name",
+            placeholder = '''Please input the exact, full fund name. Example: FRANKLIN US GOVERNMENT "A" INC''',
             disabled = False,
             label_visibility = "visible"
         )
@@ -259,25 +242,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
     # User has embeddings which they can use
     elif check_embeddings == "Yes":
 
-        # OPTION 1: Using Tkinter to load corresponding file path from where we can use embeddings
-
-        # Set up tkinter
-        root = tk.Tk()
-        root.withdraw()
-
-        # Make folder picker dialog appear on top of other windows
-        # root.wm_attributes('-topmost', 1)
-
-        # Folder picker button
-        # st.title('Folder Picker')
-        st.write('Please select a folder which will be used to load embeddings:')
-        clicked = st.button('Folder Picker',type = "secondary")
-
-        # User clicked on Folder Picker button
-        if clicked:
-            chroma_file_path = st.text_input('Selected folder:', filedialog.askdirectory(master=root))
-            st.session_state['chroma_file_path'] = chroma_file_path
-
+        uploaded_zip_file = upload_zip_files()
 
         # File uploader section for pdfs
         uploaded_files = st.file_uploader(
@@ -303,7 +268,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
             max_chars = None,
             type = "default",
             help = "This will be used to replace the word, fund, in certain prompts",
-            placeholder = "Please input the fund name",
+            placeholder = '''Please input the exact, full fund name. Example: FRANKLIN US GOVERNMENT "A" INC''',
             disabled = False,
             label_visibility = "visible"
         )
@@ -401,10 +366,12 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
         st.stop()
 
 
-    # If user clicks on the button process
-    if st.button("Process documents", type = "primary", on_click = callback) or st.session_state.process_documents:
+    # If user clicks on the button process 
+    # PS: Commented the process documents session state so it doesn't rerun the entire app again
+    # if st.button("Process documents", type = "primary", on_click = callback) or st.session_state.process_documents:
+    if st.button("Process documents", type = "primary"):
 
-        st.session_state.process_documents = True
+        # st.session_state.process_documents = True
 
         # User does not have embeddings they can use
         if check_embeddings == "No":
@@ -413,7 +380,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
             if uploaded_files and uploaded_xlsx_files:
                     
                 # Call bundle function - no_embeddings_process_documents
-                output_response, llm_prompts_to_use, context_with_max_score_list, file_path_metadata_list, source_metadata_list, orignal_excel_file, table_dfs, docs = no_embeddings_process_documents_loop_advanced(uploaded_files = uploaded_files, uploaded_xlsx_files = uploaded_xlsx_files, chroma_file_path = st.session_state['chroma_file_path'], model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, sleep = sleep, return_all_chunks = return_all_chunks, fund_variable = fund_variable)
+                output_response, llm_prompts_to_use, context_with_max_score_list, file_path_metadata_list, source_metadata_list, orignal_excel_file, table_dfs, docs = no_embeddings_process_documents_loop_advanced(uploaded_files = uploaded_files, uploaded_xlsx_files = uploaded_xlsx_files, chroma_file_path = chroma_file_path, model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, sleep = sleep, return_all_chunks = return_all_chunks, fund_variable = fund_variable)
 
                 # Storing all above variables into session state
                 # st.session_state["output_response"] = output_response
@@ -488,9 +455,9 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
                 # Display dataframe and download to excel and csv
                 st.markdown("### Bulk Prompt Results")
                 st.dataframe(data = orignal_excel_file, use_container_width = True, column_order = None) # Display dataframe containing final results
-                download_data_as_excel(orignal_excel_file = orignal_excel_file) # Display button to download results to excel file 
-                download_data_as_csv(orignal_excel_file = orignal_excel_file) # Display button to download results to csv file
-
+                download_data_as_excel_link(orignal_excel_file = orignal_excel_file) # Display link to download results to excel file 
+                download_data_as_csv_link(orignal_excel_file = orignal_excel_file) # Display link to download results to csv file
+                download_embedding_zip(chroma_file_path, zip_filename = "embeddings")
 
             ## ERROR HANDLING FOR ALL 2 FILE UPLOADS
 
@@ -515,8 +482,6 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
                 st.stop()
 
 
-
-
         # User does not have embeddings they can use
         elif check_embeddings == "Yes":
 
@@ -524,7 +489,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
             if uploaded_xlsx_files:
 
                 # Call bundle function - no_embeddings_process_documents
-                output_response, llm_prompts_to_use, context_with_max_score_list, file_path_metadata_list, source_metadata_list, orignal_excel_file, table_dfs, docs = embeddings_process_documents_loop_advanced(uploaded_files = uploaded_files, uploaded_xlsx_files = uploaded_xlsx_files, chroma_file_path = st.session_state['chroma_file_path'], model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, sleep = sleep, return_all_chunks = return_all_chunks, fund_variable = fund_variable)
+                output_response, llm_prompts_to_use, context_with_max_score_list, file_path_metadata_list, source_metadata_list, orignal_excel_file, table_dfs, docs = embeddings_process_documents_loop_advanced(uploaded_files = uploaded_files, uploaded_xlsx_files = uploaded_xlsx_files, model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, sleep = sleep, return_all_chunks = return_all_chunks, fund_variable = fund_variable, uploaded_zip_file = uploaded_zip_file)
 
                 # Display collective prompt results in an expander
                 with st.expander("Display prompt results & relevant context"):
@@ -560,8 +525,8 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
                                 
                                 # Display particular lists
                                 st.markdown(context_with_max_score_list[i])
-                                st.markdown(f"Document: {file_path_to_display[i]}")
-                                st.markdown(f"Page Source: {source_metadata_to_display[i]}")
+                                st.markdown(f"Document: {file_path_metadata_list[i]}")
+                                st.markdown(f"Page Source: {source_metadata_list[i]}")
                                 st.markdown("---")
 
                 # If show full document option is True
@@ -590,8 +555,8 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
                 # Display dataframe and download to excel and csv
                 st.markdown("### Bulk Prompt Results")
                 st.dataframe(data = orignal_excel_file, use_container_width = True, column_order = None) # Display dataframe containing final results
-                download_data_as_excel(orignal_excel_file = orignal_excel_file) # Display button to download results to excel file 
-                download_data_as_csv(orignal_excel_file = orignal_excel_file) # Display button to download results to csv file
+                download_data_as_excel_link(orignal_excel_file = orignal_excel_file) # Display button to download results to excel file 
+                download_data_as_csv_link(orignal_excel_file = orignal_excel_file) # Display button to download results to csv file
 
 
             # File uploading error handling - Excel files were not uploaded
@@ -601,4 +566,4 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
 
 
 else:
-    st.info("Seems like you are not logged in. Please head over to the Sign Up/Login to login", icon="ℹ️")
+    st.info("Seems like you are not logged in. Please head over to the Login page to login", icon="ℹ️")

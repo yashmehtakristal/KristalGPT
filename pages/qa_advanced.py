@@ -5,8 +5,8 @@ from streamlit_extras.app_logo import add_logo
 from st_pages import Page, Section, add_page_title, show_pages, hide_pages
 
 # Setting page config & header
-st.set_page_config(page_title="KristalGPT", page_icon="📖", layout="wide")
-st.header("📖 Kristal GPT")
+st.set_page_config(page_title="Kristal Retriever", page_icon="📖", layout="wide")
+st.header("📖 Kristal Retriever")
 
 # Hide particular pages if not logged in
 if not st.session_state.logged_in:
@@ -23,8 +23,6 @@ import openai
 import os
 import tempfile
 from tempfile import NamedTemporaryFile
-import tkinter as tk
-from tkinter import filedialog
 from streamlit_extras.app_logo import add_logo
 from st_pages import Page, Section, add_page_title, show_pages, hide_pages
 from core.loading import display_document_from_uploaded_files
@@ -47,7 +45,7 @@ from core.PostLLM_prompting import create_output_result_column, create_output_co
 from core.parsing import create_schema_from_excel, parse_value
 from core.Postparsing import create_filtered_excel_file, final_result_orignal_excel_file, reordering_columns
 from core.Last_fixing_fields import find_result_fund_name, find_result_fund_house, find_result_fund_class, find_result_currency, find_result_acc_or_inc, create_new_kristal_alias, update_kristal_alias, update_sponsored_by, update_required_broker, update_transactional_fund, update_disclaimer, update_risk_disclaimer, find_nav_value, update_nav_value 
-from core.output import output_to_excel, download_data_as_excel, download_data_as_csv
+from core.chroma import st_server_file, print_files_in_particular_directory, upload_zip_files, print_files_in_directory, check_zipfile_directory, download_embedding_zip
 
 
 ### CODE
@@ -108,35 +106,16 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
     check_embeddings = st.radio(label = "Do you have saved embeddings?", options = ["Yes", "No"], index = None, help = "Embeddings are saved files created by ChromaDB", disabled=False, horizontal = False, label_visibility="visible")
 
 
-    def callback():
-        # Button was clicked
-        st.session_state.process_documents = True
+    # def callback():
+    #     # Button was clicked
+    #     st.session_state.process_documents = True
 
 
     # User does not have embeddings they can use
     if check_embeddings == "No":
-        
-        # OPTION 1: Using Tkinter to save future embeddings in corresponding file path
 
-        # Set up tkinter
-        root = tk.Tk()
-        root.withdraw()
-
-        # Make folder picker dialog appear on top of other windows
-        # root.wm_attributes('-topmost', 1)
-
-        # Folder picker button
-        # st.title('Folder Picker')
-        st.write('Please select a folder where we will save future embeddings:')
-        clicked = st.button('Folder Picker')
-
-        # User clicked on Folder Picker button
-        if clicked:
-            chroma_file_path = st.text_input('Selected folder:', filedialog.askdirectory(master=root))
-            st.session_state['chroma_file_path'] = chroma_file_path
-
-        # OPTION 2: Getting file path using a text input method
-        # st.text_input("Please enter file path where you want to save embeddings", key = "chroma_file_path", type="default", help = "Please use this text input to choose a particular directory to save your embeddings to", placeholder = "C:/", disabled = False, label_visibility = "visible")
+        # Obtain chrome_file_path and chroma_file_name
+        master_folder, chroma_file_path, chroma_file_name = st_server_file()
 
         # File uploader section for pdfs
         uploaded_files = st.file_uploader(
@@ -155,7 +134,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
         #     max_chars = None,
         #     type = "default",
         #     help = "This will be used to replace the word, fund, in certain prompts",
-        #     placeholder = "Please input the fund name",
+        #     placeholder = '''Please input the exact, full fund name. Example: FRANKLIN US GOVERNMENT "A" INC''',
         #     disabled = False,
         #     label_visibility = "visible"
         # )
@@ -245,28 +224,8 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
     # User has embeddings which they can use
     elif check_embeddings == "Yes":
 
-        # OPTION 1: Using Tkinter to save future embeddings in corresponding file path
-
-        # Set up tkinter
-        root = tk.Tk()
-        root.withdraw()
-
-        # Make folder picker dialog appear on top of other windows
-        # root.wm_attributes('-topmost', 1)
-
-        # Folder picker button
-        # st.title('Folder Picker')
-        st.write('Please select a folder which will be used to load embeddings:')
-        clicked = st.button('Folder Picker')
-
-        # User clicked on Folder Picker button
-        if clicked:
-            chroma_file_path = st.text_input('Selected folder:', filedialog.askdirectory(master=root))
-            st.session_state['chroma_file_path'] = chroma_file_path
-
-        # OPTION 2: Getting file path using a text input method
-        # st.text_input("Please enter file path where you want to save embeddings", key = "chroma_file_path", type="default", help = "Please use this text input to choose a particular directory to save your embeddings to", placeholder = "C:/", disabled = False, label_visibility = "visible")
-        
+        uploaded_zip_file = upload_zip_files()
+                
         # File uploader section for pdfs
         uploaded_files = st.file_uploader(
         "Upload your pdf documents",
@@ -285,7 +244,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
         #     max_chars = None,
         #     type = "default",
         #     help = "This will be used to replace the word, fund, in certain prompts",
-        #     placeholder = "Please input the fund name",
+        #     placeholder = '''Please input the exact, full fund name. Example: FRANKLIN US GOVERNMENT "A" INC''',
         #     disabled = False,
         #     label_visibility = "visible"
         # )
@@ -378,7 +337,8 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
     with st.form(key="qa_form"):
 
         query = st.text_area(label = "Ask a question from the documents uploaded", value = None, height = None, max_chars = None, help = "Please input your questions regarding the document. Greater the prompt engineering, better the output", disabled = False, label_visibility = "visible")
-        submit = st.form_submit_button("Submit", on_click = callback)
+        # submit = st.form_submit_button("Submit", on_click = callback)
+        submit = st.form_submit_button("Submit")
 
         if not query:
             st.warning("Please enter a question to ask about the document!")
@@ -386,7 +346,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
 
 
     # If user clicks on the button process
-    if submit or st.session_state.process_documents:
+    if submit:
 
         st.session_state.process_documents = True
 
@@ -397,7 +357,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
             if uploaded_files:
                     
                 # Call bundle function - no_embeddings_process_documents
-                output_response, prompt, context_with_max_score_list, file_path_metadata_list, source_metadata_list, table_dfs, docs = no_embeddings_process_documents_individual_advanced(uploaded_files = uploaded_files, prompt = query, chroma_file_path = st.session_state['chroma_file_path'], model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, return_all_chunks = return_all_chunks)
+                output_response, prompt, context_with_max_score_list, file_path_metadata_list, source_metadata_list, table_dfs, docs = no_embeddings_process_documents_individual_advanced(uploaded_files = uploaded_files, prompt = query, chroma_file_path = chroma_file_path, model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, return_all_chunks = return_all_chunks)
 
                 # Display collective prompt results in an expander
                 with st.expander("Display prompt results & relevant context"):
@@ -459,6 +419,8 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
                         for i in range(len(table_dfs)):
                             st.dataframe(table_dfs[i])
 
+                download_embedding_zip(chroma_file_path, zip_filename = "embeddings")
+
 
             # Condition not satisfied
             else:
@@ -475,7 +437,7 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
             if uploaded_files:
 
                 # Call bundle function - no_embeddings_process_documents
-                output_response, prompt, context_with_max_score_list, file_path_metadata_list, source_metadata_list, table_dfs, docs = embeddings_process_documents_individual_advanced(uploaded_files = uploaded_files, prompt = query, chroma_file_path = st.session_state['chroma_file_path'], model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, return_all_chunks = return_all_chunks)
+                output_response, prompt, context_with_max_score_list, file_path_metadata_list, source_metadata_list, table_dfs, docs = embeddings_process_documents_individual_advanced(uploaded_files = uploaded_files, prompt = query, model = model, nodes_to_retrieve = nodes_to_retrieve, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries, return_all_chunks = return_all_chunks, uploaded_zip_file = uploaded_zip_file)
                 #output_response, prompt, context_with_max_score_list, file_path_metadata_list, source_metadata_list, table_dfs, docs = embeddings_process_documents_individual_advanced(uploaded_files = uploaded_files, chroma_file_path = st.session_state['chroma_file_path'], prompt = query)
                 # embeddings_process_documents_individual(uploaded_files = uploaded_files, chroma_file_path = st.session_state['chroma_file_path'], prompt = query)
 
@@ -550,4 +512,4 @@ if st.session_state.logged_in is True and st.session_state.logout is False:
 
 
 else:
-    st.info("Seems like you are not logged in. Please head over to the Sign Up/Login to login", icon="ℹ️")
+    st.info("Seems like you are not logged in. Please head over to the Login page to login", icon="ℹ️")

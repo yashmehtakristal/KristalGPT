@@ -145,16 +145,26 @@ def individual_prompt_advanced(query_engine, prompt, nodes_to_retrieve, return_a
         # Looping through the scores and appending it to a list
         for i in range(nodes_to_retrieve):
 
+            # st.write(response.source_nodes[i].metadata)
+
             # Appending each individual context in the list
             individual_context = response.source_nodes[i].get_text()
             individual_context_list.append(individual_context)
 
             # Extracting file_path metadata information & append to list
-            file_path_metadata = response.source_nodes[i].metadata["file_path"]
+            if "file_path" in response.source_nodes[i].metadata and response.source_nodes[i].metadata["file_path"] is not None:
+                file_path_metadata = response.source_nodes[i].metadata["file_path"]
+            else:
+                file_path_metadata = ""
+
             file_path_metadata_list.append(file_path_metadata)
 
             # Extracting source metadata information & append to list
-            source_metadata = response.source_nodes[i].metadata["source"]
+            if "source" in response.source_nodes[i].metadata and response.source_nodes[i].metadata["source"] is not None:
+                source_metadata = response.source_nodes[i].metadata["source"]
+            else:
+                source_metadata = ""
+
             source_metadata_list.append(source_metadata)
 
         return output_response, output_context, individual_context_list, file_path_metadata_list, source_metadata_list
@@ -221,7 +231,7 @@ def individual_prompt_advanced(query_engine, prompt, nodes_to_retrieve, return_a
 
 # @st.cache_data(show_spinner = False)
 # @retry(wait = wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
-@st.cache_resource(show_spinner = False)
+# @st.cache_resource(show_spinner = False)
 def prompt_loop(query_engine, llm_prompts_to_use):
     '''
     prompt_loop: This function runs a loop by inputting multiple prompts (from list llm_prompts_to_use) and stores the output 
@@ -277,7 +287,7 @@ def prompt_loop(query_engine, llm_prompts_to_use):
         # st.write(f"Context from LLM is {response}")
         
         # Wait 8 seconds before executing next prompt
-        time.sleep(8)
+        time.sleep(3)
 
     return output_response, output_context
 

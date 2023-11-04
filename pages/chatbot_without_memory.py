@@ -4,16 +4,14 @@ import streamlit as st
 
 
 # Setting page config & header
-st.set_page_config(page_title="KristalGPT", page_icon="📖", layout="wide")
-st.header("📖 Kristal GPT")
+st.set_page_config(page_title="Kristal Retriever", page_icon="📖", layout="wide")
+st.header("📖 Kristal Retriever")
 
 
 import openai
 import os
 import tempfile
 from tempfile import NamedTemporaryFile
-import tkinter as tk
-from tkinter import filedialog
 from streamlit_extras.app_logo import add_logo
 
 
@@ -81,28 +79,6 @@ if check_embeddings == "No":
     accept_multiple_files = False
 )
 
-    # OPTION 1: Using Tkinter to save future embeddings in corresponding file path
-
-    # Set up tkinter
-    root = tk.Tk()
-    root.withdraw()
-
-    # Make folder picker dialog appear on top of other windows
-    # root.wm_attributes('-topmost', 1)
-
-    # Folder picker button
-    # st.title('Folder Picker')
-    st.write('Please select a folder where we will save future embeddings:')
-    clicked = st.button('Folder Picker')
-
-    # User clicked on Folder Picker button
-    if clicked:
-        chroma_file_path = st.text_input('Selected folder:', filedialog.askdirectory(master=root))
-        st.session_state['chroma_file_path'] = chroma_file_path
-
-    # OPTION 2: Getting file path using a text input method
-    # st.text_input("Please enter file path where you want to save embeddings", key = "chroma_file_path", type="default", help = "Please use this text input to choose a particular directory to save your embeddings to", placeholder = "C:/", disabled = False, label_visibility = "visible")
-
 # User has embeddings which they can use
 elif check_embeddings == "Yes":
 
@@ -123,26 +99,6 @@ elif check_embeddings == "Yes":
     help="Please upload the excel file. Make sure it is in the appropriate format. Check the [name] sidebar for more details about the format",
     accept_multiple_files = False
 )
-
-    # OPTION 1: Using Tkinter to load corresponding file path from where we can use embeddings
-
-    # Set up tkinter
-    root = tk.Tk()
-    root.withdraw()
-
-    # Make folder picker dialog appear on top of other windows
-    # root.wm_attributes('-topmost', 1)
-
-    # Folder picker button
-    # st.title('Folder Picker')
-    st.write('Please select a folder which will be used to load embeddings:')
-    clicked = st.button('Folder Picker',type = "secondary")
-
-    # User clicked on Folder Picker button
-    if clicked:
-        chroma_file_path = st.text_input('Selected folder:', filedialog.askdirectory(master=root))
-        st.session_state['chroma_file_path'] = chroma_file_path
-
 
 # No value inserted for check_embeddings - raise warning
 else:

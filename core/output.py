@@ -10,6 +10,9 @@ import time
 import warnings
 import streamlit as st
 import io
+import base64 
+import re
+import uuid
 warnings.filterwarnings("ignore")
 
 
@@ -25,12 +28,13 @@ def output_to_excel(orignal_excel_file, excel_directory, output_excel_filename, 
 
     Output - None
     '''
+
     output_excel_file = f"{output_excel_filename}.{file_extension}"
     excel_file_path = os.path.join(excel_directory, output_excel_file)
     orignal_excel_file.to_excel(excel_file_path, index=True)
 
 
-def download_data_as_excel(orignal_excel_file):
+def download_data_as_excel_button(orignal_excel_file):
 
     # buffer to use for excel writer
     buffer = io.BytesIO()
@@ -39,13 +43,67 @@ def download_data_as_excel(orignal_excel_file):
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
 
         # Write each dataframe to a different worksheet
-        orignal_excel_file.to_excel(writer, sheet_name = "Final_Results", index = False)
+        orignal_excel_file.to_excel(writer, sheet_name = "Final_Results", index = False, header = True)
 
         # Save writer
         writer.close()
 
-        # Display download button for the dataframe
-        st.download_button(label = "Download Output file as Excel File", data = buffer, file_name = "results.xlsx", mime = "application/vnd.ms-excel", key = "download_button", help = "Download your excel file", type="secondary", disabled = False, use_container_width = False)
+    # Generate a link to download the Excel file
+    # st.download_button(label = "Download Output file as Excel File", data = buffer, file_name = "results.xlsx", mime = "application/vnd.ms-excel", key = "download_button", help = "Download your excel file", type="secondary", disabled = False, use_container_width = False)
+
+    # st.markdown(
+    #     f'<a href="data:application/vnd.ms-excel;base64,{buffer}" download="results.xlsx">Download Output file as Excel File</a>',
+    #     unsafe_allow_html=True,
+    # )
+
+def download_data_as_excel_link(orignal_excel_file):
+
+    # buffer to use for excel writer
+    buffer = io.BytesIO()
+
+    downloaded_file = orignal_excel_file.to_excel(buffer, index=False, header=True)
+
+    buffer.seek(0)  # reset pointer
+
+    b64 = base64.b64encode(buffer.read()).decode()  # some strings
+
+    # Defining css attributes
+    # button_uuid = str(uuid.uuid4()).replace('-', '')
+    # button_id = re.sub('\d+', '', button_uuid)
+    # custom_css = f""" 
+    #     <style>
+    #         #{button_id} {{
+    #             display: inline-flex;
+    #             align-items: center;
+    #             justify-content: center;
+    #             background-color: rgb(255, 255, 255);
+    #             color: rgb(38, 39, 48);
+    #             padding: .25rem .75rem;
+    #             position: relative;
+    #             text-decoration: none;
+    #             border-radius: 4px;
+    #             border-width: 1px;
+    #             border-style: solid;
+    #             border-color: rgb(230, 234, 241);
+    #             border-image: initial;
+    #         }} 
+    #         #{button_id}:hover {{
+    #             border-color: rgb(246, 51, 102);
+    #             color: rgb(246, 51, 102);
+    #         }}
+    #         #{button_id}:active {{
+    #             box-shadow: none;
+    #             background-color: rgb(246, 51, 102);
+    #             color: white;
+    #             }}
+    #     </style> """
+
+    # link = custom_css + f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="results.xlsx">Download excel file</a>'
+    link = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="results.xlsx">Download excel file</a>'
+
+    st.markdown(link, unsafe_allow_html=True)
+
+
 
 @st.cache_data
 def convert_to_csv(df):
@@ -65,6 +123,49 @@ def download_data_as_csv(orignal_excel_file):
         file_name = 'results.csv',
         mime= 'text/csv'
     )
+
+
+def download_data_as_csv_link(orignal_excel_file):
+
+    # Call above function convert_to_csv
+    csv = orignal_excel_file.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()
+
+    # Defining css style
+    # button_uuid = str(uuid.uuid4()).replace('-', '')
+    # button_id = re.sub('\d+', '', button_uuid)
+    # custom_css = f""" 
+    #     <style>
+    #         #{button_id} {{
+    #             display: inline-flex;
+    #             align-items: center;
+    #             justify-content: center;
+    #             background-color: rgb(255, 255, 255);
+    #             color: rgb(38, 39, 48);
+    #             padding: .25rem .75rem;
+    #             position: relative;
+    #             text-decoration: none;
+    #             border-radius: 4px;
+    #             border-width: 1px;
+    #             border-style: solid;
+    #             border-color: rgb(230, 234, 241);
+    #             border-image: initial;
+    #         }} 
+    #         #{button_id}:hover {{
+    #             border-color: rgb(246, 51, 102);
+    #             color: rgb(246, 51, 102);
+    #         }}
+    #         #{button_id}:active {{
+    #             box-shadow: none;
+    #             background-color: rgb(246, 51, 102);
+    #             color: white;
+    #             }}
+    #     </style> """
+
+    # Generate a link to download the Excel file
+    # link = custom_css + f'<a href="data:file/csv;base64,{b64}" download="results.csv">Download csv file</a>'
+    link = f'<a href="data:file/csv;base64,{b64}" download="results.csv">Download csv file</a>'
+    st.markdown(link, unsafe_allow_html=True)
 
 
 def download_data_as_excel_old(orignal_excel_file):

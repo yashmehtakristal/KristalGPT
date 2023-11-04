@@ -15,11 +15,13 @@ from core.PostLLM_prompting import create_output_result_column, create_output_co
 from core.parsing import create_schema_from_excel, parse_value
 from core.Postparsing import create_filtered_excel_file, final_result_orignal_excel_file, reordering_columns
 from core.Last_fixing_fields import find_result_fund_name, find_result_fund_house, find_result_fund_class, find_result_currency, find_result_acc_or_inc, create_new_kristal_alias, update_kristal_alias, update_sponsored_by, update_required_broker, update_transactional_fund, update_disclaimer, update_risk_disclaimer, find_nav_value, update_nav_value 
-from core.output import output_to_excel, download_data_as_excel, download_data_as_csv
-from core.chroma import create_or_get_chroma_db
+from core.output import output_to_excel, download_data_as_csv, download_data_as_excel_link, download_data_as_csv_link
+from core.chroma import create_or_get_chroma_db, download_embedding_old, print_files_in_particular_directory, print_files_in_directory, download_embedding_zip, write_zip_files_to_directory, check_zipfile_directory, get_chroma_db, create_chroma_db
 
 
 def no_embeddings_process_documents_individual(uploaded_files, chroma_file_path, prompt):
+     
+    with st.spinner("Reading uploaded PDF and Excel files"):
         
         docs = read_documents_from_uploaded_files(uploaded_files)
         # st.write("This is docs", docs)
@@ -37,7 +39,13 @@ def no_embeddings_process_documents_individual(uploaded_files, chroma_file_path,
 
         directory_pickles = save_to_pickle(directory_pickles = "Pickle/table_dfs.pkl", table_dfs = table_dfs)
 
-        vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+    st.success("Successfully read pdf file", icon="✅")
+
+
+    with st.spinner("Conducting Indexing, Querying and Prompting"):
+
+        # vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+        vector_store, storage_context = create_chroma_db(chroma_file_path)
 
         # Functions performing indexing
         llm, service_context, df_query_engines = query_engine_function(table_dfs = table_dfs)
@@ -49,12 +57,23 @@ def no_embeddings_process_documents_individual(uploaded_files, chroma_file_path,
         # Calling individual_prompt function
         output_response, output_context = individual_prompt(query_engine = query_engine, prompt = prompt)
 
-        st.markdown("#### Answer")
-        st.markdown(f"{output_response}")
+    st.success("Successfully finished Indexing, Querying and Prompting", icon="✅")
+
+    st.markdown("#### Answer")
+    st.markdown(f"{output_response}")
+
+    download_embedding_zip(chroma_file_path, zip_filename = "embeddings")
 
 
+def embeddings_process_documents_individual_advanced(uploaded_files, prompt, nodes_to_retrieve, model, temperature, request_timeout, max_retries, return_all_chunks, uploaded_zip_file):
 
-def embeddings_process_documents_individual_advanced(uploaded_files, prompt, chroma_file_path, nodes_to_retrieve, model, temperature, request_timeout, max_retries, return_all_chunks):
+    with st.spinner("Extract zip files"):
+        master_folder, chroma_file_path, chroma_file_name = check_zipfile_directory()
+        write_zip_files_to_directory(uploaded_zip_file, chroma_file_path)
+
+    st.success("Successfully extracted zip files", icon="✅")
+        
+    with st.spinner("Reading uploaded PDF and Excel files"):
         
         docs = read_documents_from_uploaded_files(uploaded_files)
         # st.write("This is docs", docs)
@@ -72,7 +91,13 @@ def embeddings_process_documents_individual_advanced(uploaded_files, prompt, chr
 
         directory_pickles = save_to_pickle(directory_pickles = "Pickle/table_dfs.pkl", table_dfs = table_dfs)
 
-        vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+    st.success("Successfully read pdf file and excel file", icon="✅")
+
+
+    with st.spinner("Conducting Indexing, Querying and Prompting"):
+
+        # vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+        vector_store, storage_context = get_chroma_db(chroma_file_path)
 
         # Functions performing indexing
         llm, service_context, df_query_engines = query_engine_function_advanced(table_dfs = table_dfs, model = model, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries)
@@ -91,6 +116,8 @@ def embeddings_process_documents_individual_advanced(uploaded_files, prompt, chr
 
 def no_embeddings_process_documents_individual_advanced(uploaded_files, prompt, chroma_file_path, nodes_to_retrieve, model, temperature, request_timeout, max_retries, return_all_chunks):
         
+    with st.spinner("Reading uploaded PDF and Excel files"):
+
         docs = read_documents_from_uploaded_files(uploaded_files)
         # st.write("This is docs", docs)
 
@@ -107,7 +134,14 @@ def no_embeddings_process_documents_individual_advanced(uploaded_files, prompt, 
 
         directory_pickles = save_to_pickle(directory_pickles = "Pickle/table_dfs.pkl", table_dfs = table_dfs)
 
-        vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+    st.success("Successfully read pdf file and excel file", icon="✅")
+
+
+    with st.spinner("Conducting Indexing, Querying and Prompting"):
+
+        # vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+        vector_store, storage_context = create_chroma_db(chroma_file_path)
+
 
         # Functions performing indexing
         llm, service_context, df_query_engines = query_engine_function_advanced(table_dfs = table_dfs, model = model, temperature = temperature, request_timeout = request_timeout, max_retries = max_retries)
@@ -117,10 +151,11 @@ def no_embeddings_process_documents_individual_advanced(uploaded_files, prompt, 
         recursive_retriever, response_synthesizer, query_engine = recursive_retriever_old(vector_retriever = vector_retriever, df_id_query_engine_mapping = df_id_query_engine_mapping, service_context = service_context)
 
         # Calling individual_prompt function
-
         output_response, output_context, context_with_max_score_list, file_path_metadata_list, source_metadata_list = individual_prompt_advanced(query_engine = query_engine, prompt = prompt, nodes_to_retrieve = nodes_to_retrieve, return_all_chunks = return_all_chunks)
 
-        return output_response, prompt, context_with_max_score_list, file_path_metadata_list, source_metadata_list, table_dfs, docs
+    st.success("Successfully finished Indexing, Querying and Prompting", icon="✅")
+
+    return output_response, prompt, context_with_max_score_list, file_path_metadata_list, source_metadata_list, table_dfs, docs
         # st.markdown("#### Answer")
         # st.markdown(f"{output_response}")
 
@@ -150,7 +185,9 @@ def no_embeddings_process_documents_loop_advanced(uploaded_files, uploaded_xlsx_
 
 
         with st.spinner("Saving Embeddings"):
-            vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+
+            # vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+            vector_store, storage_context = create_chroma_db(chroma_file_path)
 
         st.success("Successfully saved embeddings", icon="✅")
 
@@ -366,7 +403,8 @@ def no_embeddings_process_documents_loop(uploaded_files, uploaded_xlsx_files, ch
 
 
         with st.spinner("Saving Embeddings"):
-            vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+            # vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+            vector_store, storage_context = create_chroma_db(chroma_file_path)
 
         st.success("Successfully saved embeddings", icon="✅")
 
@@ -489,15 +527,30 @@ def no_embeddings_process_documents_loop(uploaded_files, uploaded_xlsx_files, ch
         st.dataframe(data = orignal_excel_file, use_container_width = True, column_order = None)
 
         # Display button to download results to excel file
-        download_data_as_excel(orignal_excel_file = orignal_excel_file)
+        download_data_as_excel_link(orignal_excel_file = orignal_excel_file)
 
         # Display button to download results to csv file
-        download_data_as_csv(orignal_excel_file = orignal_excel_file)
+        download_data_as_csv_link(orignal_excel_file = orignal_excel_file)
+
+        # print_files_in_particular_directory(chroma_file_path)
+
+        # print_files_in_directory(chroma_file_path)
+
+        # Display button to download embeddings from a given file path
+        download_embedding_zip(chroma_file_path, zip_filename = "embeddings")
+        #download_embedding_old(chroma_file_path)
 
 
-def embeddings_process_documents_individual(uploaded_files, chroma_file_path, prompt):
+def embeddings_process_documents_individual(uploaded_files, prompt, uploaded_zip_file):
+
+    with st.spinner("Extract zip files"):
+        master_folder, chroma_file_path, chroma_file_name = check_zipfile_directory()
+        write_zip_files_to_directory(uploaded_zip_file, chroma_file_path)
+
+    st.success("Successfully extracted zip files", icon="✅")
         
-
+    with st.spinner("Reading uploaded PDF and Excel files"):
+        
         docs = read_documents_from_uploaded_files(uploaded_files)
         # st.write("This is docs", docs)
 
@@ -514,23 +567,30 @@ def embeddings_process_documents_individual(uploaded_files, chroma_file_path, pr
 
         directory_pickles = save_to_pickle(directory_pickles = "Pickle/table_dfs.pkl", table_dfs = table_dfs)
 
-        vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+    st.success("Successfully read pdf file and excel file", icon="✅")        
 
-        # Functions performing indexing
+    with st.spinner("Conducting Indexing, Querying and Prompting"):
+
+        # vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+        vector_store, storage_context = get_chroma_db(chroma_file_path)
         llm, service_context, df_query_engines = query_engine_function(table_dfs = table_dfs)
         vector_index, vector_retriever, df_id_query_engine_mapping, nodes_to_retrieve = build_vector_index(service_context = service_context, df_query_engines = df_query_engines, docs = docs, nodes_to_retrieve = 3, storage_context = storage_context, vector_store = vector_store, is_chroma_loading = False)
-        # vector_index, vector_retriever, df_id_query_engine_mapping, nodes_to_retrieve = build_vector_index(service_context = service_context, df_query_engines = df_query_engines, docs = docs, nodes_to_retrieve = 3)
-
         recursive_retriever, response_synthesizer, query_engine = recursive_retriever_old(vector_retriever = vector_retriever, df_id_query_engine_mapping = df_id_query_engine_mapping, service_context = service_context)
-
-        # Calling individual_prompt function
         output_response, output_context = individual_prompt(query_engine = query_engine, prompt = prompt)
 
-        st.markdown("#### Answer")
-        st.markdown(f"{output_response}")
+    st.success("Successfully finished Indexing, Querying and Prompting", icon="✅")        
+
+    st.markdown("#### Answer")
+    st.markdown(f"{output_response}")
 
 
-def embeddings_process_documents_loop(uploaded_files, uploaded_xlsx_files, chroma_file_path, fund_variable):
+def embeddings_process_documents_loop(uploaded_files, uploaded_xlsx_files, fund_variable, uploaded_zip_file):
+                
+        with st.spinner("Extract zip files"):
+            master_folder, chroma_file_path, chroma_file_name = check_zipfile_directory()
+            write_zip_files_to_directory(uploaded_zip_file, chroma_file_path)
+
+        st.success("Successfully extracted zip files", icon="✅")
 
         with st.spinner("Reading uploaded PDF and Excel files"):
 
@@ -554,9 +614,10 @@ def embeddings_process_documents_loop(uploaded_files, uploaded_xlsx_files, chrom
 
 
         with st.spinner("Loading Embeddings"):
-            vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+            # vector_store, storage_context = create_or_get_chroma_db(chroma_file_path)
+            vector_store, storage_context = get_chroma_db(chroma_file_path)
 
-        st.success("Successfully saved embeddings", icon="✅")
+        st.success("Successfully loaded embeddings", icon="✅")
 
 
         with st.spinner("Conducting Indexing & LLM-preprocessing"):
@@ -677,14 +738,20 @@ def embeddings_process_documents_loop(uploaded_files, uploaded_xlsx_files, chrom
         st.dataframe(data = orignal_excel_file, use_container_width = True, column_order = None)
 
         # Display button to download results to excel file
-        download_data_as_excel(orignal_excel_file = orignal_excel_file)
+        download_data_as_excel_link(orignal_excel_file = orignal_excel_file)
 
         # Display button to download results to csv file
-        download_data_as_csv(orignal_excel_file = orignal_excel_file)
+        download_data_as_csv_link(orignal_excel_file = orignal_excel_file)
+
+        # download_embedding_zip(directory, zip_filename)
 
 
 
-def embeddings_process_documents_loop_advanced(uploaded_files, uploaded_xlsx_files, chroma_file_path, nodes_to_retrieve, model, temperature, request_timeout, max_retries, sleep, return_all_chunks, fund_variable):
+def embeddings_process_documents_loop_advanced(uploaded_files, uploaded_xlsx_files, nodes_to_retrieve, model, temperature, request_timeout, max_retries, sleep, return_all_chunks, fund_variable, uploaded_zip_file):
+
+        with st.spinner("Extract zip files"):
+            master_folder, chroma_file_path, chroma_file_name = check_zipfile_directory()
+            write_zip_files_to_directory(uploaded_zip_file, chroma_file_path)
 
         with st.spinner("Reading uploaded PDF and Excel files"):
 
