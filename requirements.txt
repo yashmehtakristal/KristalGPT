@@ -14,3 +14,5 @@ streamlit-authenticator==0.2.3
 tenacity==8.2.3
 streamlit_extras==0.3.4
 st_pages==0.4.5
+llama_index==0.8.44
+llama_hub==0.0.37
