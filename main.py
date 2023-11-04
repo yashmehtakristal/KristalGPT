@@ -141,7 +141,7 @@ try:
             st.session_state.username = username
 
             # If authentication status is True
-            if authentication_status:
+            if authentication_status is True:
 
                 # Setting session state of logged in = True
                 # & log out = False
@@ -175,7 +175,7 @@ try:
                 # )
 
         # ERROR HANDLING
-            elif not authentication_status:
+            elif authentication_status is False:
                 with info:
                     st.error('Incorrect Password or username')
             
