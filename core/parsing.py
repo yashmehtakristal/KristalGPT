@@ -171,7 +171,7 @@ def parse_value(output_response, llm_prompts_index, orignal_excel_file, schema, 
     
     # Iterate through llm_prompts_index and assign values from final_output_value to a new column, "Final Output result"
     for index, info_dict in zip(llm_prompts_index, final_output_value):
-        # orignal_excel_file.at[index, 'Final Output result'] = info_dict
+        orignal_excel_file.at[index, 'Final Output result'] = info_dict
     
     return orignal_excel_file
 
