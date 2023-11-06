@@ -167,6 +167,7 @@ def parse_value(output_response, llm_prompts_index, orignal_excel_file, schema, 
     print(final_output_value)
 
     # Ensure that the "Final Output result" column accepts object (dictionary) data type
+    orignal_excel_file['Final Output result'] = None  # Initialize the column with None values
     orignal_excel_file['Final Output result'] = orignal_excel_file['Final Output result'].astype(object)
     
     # Iterate through llm_prompts_index and assign values from final_output_value to a new column, "Final Output result"
