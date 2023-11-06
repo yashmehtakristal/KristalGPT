@@ -163,9 +163,15 @@ def parse_value(output_response, llm_prompts_index, orignal_excel_file, schema, 
         chain_result = chain.run(output_value)
         final_output_value.append(chain_result)
 
+    print(llm_prompts_index)
+    print(final_output_value)
+
+    # Ensure that the "Final Output result" column accepts object (dictionary) data type
+    orignal_excel_file['Final Output result'] = orignal_excel_file['Final Output result'].astype(object)
+    
     # Iterate through llm_prompts_index and assign values from final_output_value to a new column, "Final Output result"
     for index, info_dict in zip(llm_prompts_index, final_output_value):
-        orignal_excel_file.at[index, 'Final Output result'] = info_dict
+        # orignal_excel_file.at[index, 'Final Output result'] = info_dict
     
     return orignal_excel_file
 
