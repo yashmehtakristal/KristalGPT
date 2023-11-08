@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 
 # Defining query engine over tables
-@st.cache_resource(show_spinner = False)
+# @st.cache_resource(show_spinner = False)
 def query_engine_function(table_dfs):
     '''
     query_engine: This function defines the llm, service context object and df_query_engines
@@ -44,7 +44,7 @@ def query_engine_function(table_dfs):
     # Returns the llm, service context, and query engine
     return llm, service_context, df_query_engines
 
-@st.cache_resource(show_spinner = False)
+# @st.cache_resource(show_spinner = False)
 def query_engine_function_advanced(table_dfs, model, temperature, request_timeout, max_retries):
     '''
     query_engine: This function defines the llm, service context object and df_query_engines
